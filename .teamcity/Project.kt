@@ -31,8 +31,8 @@ object AndroidCI : BuildType({
     }
     params {
         // Gradle JVM / caching
-        param("env.JAVA_HOME", "%{CONF_JAVA_HOME}%")
-        param("env.ANDROID_SDK_ROOT", "%{CONF_ANDROID_SDK}%")
+        param("env.JAVA_HOME", "%CONF_JAVA_HOME%")
+        param("env.ANDROID_SDK_ROOT", "%CONF_ANDROID_SDK%")
     }
     steps {
         gradle {
@@ -68,8 +68,8 @@ object AndroidDistribute : BuildType({
         cleanCheckout = true
     }
     params {
-        param("env.JAVA_HOME", "%{CONF_JAVA_HOME}%")
-        param("env.ANDROID_SDK_ROOT", "%{CONF_ANDROID_SDK}%")
+        param("env.JAVA_HOME", "%CONF_JAVA_HOME%")
+        param("env.ANDROID_SDK_ROOT", "%CONF_ANDROID_SDK%")
         // Firebase
         param("env.FIREBASE_TOKEN", "credentialsJSON:%FIREBASE_TOKEN_ID%")
         param("env.FIREBASE_APP_ID", "%ANDROID_FIREBASE_APP_ID%")
@@ -186,7 +186,7 @@ object IosFirebase : BuildType({
 
 // ---- Project ----
 object ProjectRoot : Project({
-    name = "KMM (Android + iOS)"
+    // Do not set name here; TeamCity may disallow renaming root in relative hierarchies
     description = "TeamCity Kotlin DSL for Kotlin Multiplatform with Android Firebase Distribution and iOS TestFlight/Firebase"
 
     params {
