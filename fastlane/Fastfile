@@ -1,0 +1,58 @@
+default_platform(:ios)
+
+platform :ios do
+  desc "Build and upload to TestFlight"
+  lane :beta do
+    require 'base64'
+    # Recreate API key file from base64 to avoid storing p8 in repo
+    p8_base64 = ENV["ASC_KEY_P8_BASE64"]
+    key_path = File.join(Dir.pwd, "fastlane", "asc_key.p8")
+    if p8_base64 && !p8_base64.empty?
+      File.open(key_path, "wb") { |f| f.write(Base64.decode64(p8_base64)) }
+    end
+
+    api_key = app_store_connect_api_key(
+      key_id: ENV["ASC_KEY_ID"],
+      issuer_id: ENV["ASC_ISSUER_ID"],
+      key_filepath: key_path,
+      is_key_content_base64: false
+    )
+
+    # Ensure signing (you can switch to manual signing if preferred)
+    if ENV["MATCH_GIT_URL"] && !ENV["MATCH_GIT_URL"].empty?
+      match(type: "appstore", readonly: true, api_key: api_key)
+    end
+
+    build_app(
+      scheme: ENV["XCODE_SCHEME"] || "App",
+      export_method: "app-store",
+      output_directory: "fastlane/build",
+      include_bitcode: false
+    )
+    upload_to_testflight(
+      api_key: api_key,
+      groups: (ENV["TESTFLIGHT_GROUPS"] || "internal testers")
+    )
+  end
+
+  desc "Build ipa and upload to Firebase App Distribution"
+  lane :firebase_beta do
+    # Optional: use match for ad-hoc signing
+    if ENV["MATCH_GIT_URL"] && !ENV["MATCH_GIT_URL"].empty?
+      match(type: "adhoc", readonly: true)
+    end
+    build_app(
+      scheme: ENV["XCODE_SCHEME"] || "App",
+      export_method: "ad-hoc",
+      output_directory: "fastlane/build",
+      include_bitcode: false
+    )
+    firebase_app_distribution(
+      app: ENV["FIREBASE_APP_ID_IOS"],
+      groups: ENV["FIREBASE_GROUPS"] || "internal-testers",
+      release_notes: ENV["RELEASE_NOTES"] || "Automated iOS build from TeamCity",
+      firebase_cli_token: ENV["FIREBASE_TOKEN"],
+      ipa_path: Dir["fastlane/build/*.ipa"].first
+    )
+  end
+end
