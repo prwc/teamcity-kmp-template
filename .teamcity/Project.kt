@@ -43,9 +43,7 @@ object AndroidCI : BuildType({
             gradleParams = "-Dorg.gradle.jvmargs='-Xmx3g' --stacktrace --build-cache"
         }
     }
-    artifacts {
-        artifactRules = "app/build/outputs/**/*.apk => android-artifacts"
-    }
+    artifactRules = "app/build/outputs/**/*.apk => android-artifacts"
     triggers {
         vcs {
             branchFilter = """
@@ -91,9 +89,7 @@ object AndroidDistribute : BuildType({
             gradleParams = "-Dorg.gradle.jvmargs='-Xmx3g' --stacktrace --build-cache -PfirebaseAppId=%env.FIREBASE_APP_ID% -PreleaseNotes='%env.RELEASE_NOTES%'"
         }
     }
-    artifacts {
-        artifactRules = "app/build/outputs/**/*.apk => android-artifacts"
-    }
+    artifactRules = "app/build/outputs/**/*.apk => android-artifacts"
     triggers {
         vcs {
             branchFilter = """
@@ -138,9 +134,7 @@ object IosTestFlight : BuildType({
             scriptContent = "export LC_ALL=en_US.UTF-8; export LANG=en_US.UTF-8; bundle exec fastlane beta || fastlane beta"
         }
     }
-    artifacts {
-        artifactRules = "fastlane/build/**/*.ipa => ios-artifacts"
-    }
+    artifactRules = "fastlane/build/**/*.ipa => ios-artifacts"
     requirements {
         contains("teamcity.agent.jvm.os.name", "Mac")
         contains("env.XCODE_VERSION", "") // any Xcode
@@ -184,9 +178,7 @@ object IosFirebase : BuildType({
             scriptContent = "export LC_ALL=en_US.UTF-8; export LANG=en_US.UTF-8; bundle exec fastlane firebase_beta || fastlane firebase_beta"
         }
     }
-    artifacts {
-        artifactRules = "fastlane/build/**/*.ipa => ios-artifacts"
-    }
+    artifactRules = "fastlane/build/**/*.ipa => ios-artifacts"
     requirements {
         contains("teamcity.agent.jvm.os.name", "Mac")
     }
@@ -228,7 +220,7 @@ object ProjectRoot : Project({
         // Tools on agents
         param("CONF_JAVA_HOME", "/usr/lib/jvm/temurin-17-jdk")
         param("CONF_ANDROID_SDK", "/opt/android-sdk")
-    })
+    }
 
     vcsRoot(GitHubVcs)
     buildType(AndroidCI)
