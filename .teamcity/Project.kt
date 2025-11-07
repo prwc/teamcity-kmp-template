@@ -47,15 +47,14 @@ object AndroidCI : BuildType({
     triggers {
         vcs {
             branchFilter = """
-                +:refs/heads/*
-                -:refs/heads/release/*
+                +:refs/heads/master
             """.trimIndent()
         }
     }
     requirements {
-        // Any agent with Android SDK
+        // Any macOS agent with Android SDK
         contains("env.ANDROID_SDK_ROOT", "/") // simplistic presence check
-        doesNotContain("teamcity.agent.jvm.os.name", "Mac") // prefer non-mac for Android to free macOS for iOS
+        contains("teamcity.agent.jvm.os.name", "Mac") // run on macOS agents
     }
 })
 
@@ -81,25 +80,26 @@ object AndroidDistribute : BuildType({
         param("env.ANDROID_KEY_PASSWORD", "%ANDROID_KEY_PASSWORD%")
     }
     steps {
-        gradle {
-            name = "Assemble & Upload to Firebase"
-            useGradleWrapper = true
-            tasks = ":app:assembleRelease :app:appDistributionUploadRelease"
-            jdkHome = "%env.JAVA_HOME%"
-            gradleParams = "-Dorg.gradle.jvmargs='-Xmx3g' --stacktrace --build-cache -PfirebaseAppId=%env.FIREBASE_APP_ID% -PreleaseNotes='%env.RELEASE_NOTES%'"
+        script {
+            name = "Bundle install (if Gemfile present)"
+            scriptContent = "if [ -f Gemfile ]; then bundle install --path vendor/bundle; fi"
+        }
+        script {
+            name = "fastlane android firebase_beta"
+            scriptContent = "export LC_ALL=en_US.UTF-8; export LANG=en_US.UTF-8; bundle exec fastlane android firebase_beta || fastlane android firebase_beta"
         }
     }
     artifactRules = "app/build/outputs/**/*.apk => android-artifacts"
     triggers {
         vcs {
             branchFilter = """
-                +:refs/heads/release/*
-                +:refs/tags/v*
+                +:refs/heads/master
             """.trimIndent()
         }
     }
     requirements {
         contains("env.ANDROID_SDK_ROOT", "/")
+        contains("teamcity.agent.jvm.os.name", "Mac")
     }
 })
 
@@ -142,8 +142,7 @@ object IosTestFlight : BuildType({
     triggers {
         vcs {
             branchFilter = """
-                +:refs/heads/release/*
-                +:refs/tags/ios-v*
+                +:refs/heads/master
             """.trimIndent()
         }
     }

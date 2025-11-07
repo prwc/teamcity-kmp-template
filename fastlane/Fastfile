@@ -56,3 +56,47 @@ platform :ios do
     )
   end
 end
+
+platform :android do
+  desc "Build Android release and upload to Firebase App Distribution"
+  lane :firebase_beta do
+    # Optional: inject signing via Gradle properties if your project reads them
+    signing_props = {}
+    if ENV["ANDROID_KEYSTORE_PATH"] && !ENV["ANDROID_KEYSTORE_PATH"].empty?
+      signing_props["android.injected.signing.store.file"] = ENV["ANDROID_KEYSTORE_PATH"]
+    end
+    if ENV["ANDROID_KEYSTORE_PASSWORD"] && !ENV["ANDROID_KEYSTORE_PASSWORD"].empty?
+      signing_props["android.injected.signing.store.password"] = ENV["ANDROID_KEYSTORE_PASSWORD"]
+    end
+    if ENV["ANDROID_KEY_ALIAS"] && !ENV["ANDROID_KEY_ALIAS"].empty?
+      signing_props["android.injected.signing.key.alias"] = ENV["ANDROID_KEY_ALIAS"]
+    end
+    if ENV["ANDROID_KEY_PASSWORD"] && !ENV["ANDROID_KEY_PASSWORD"].empty?
+      signing_props["android.injected.signing.key.password"] = ENV["ANDROID_KEY_PASSWORD"]
+    end
+
+    gradle(
+      task: "clean",
+      project_dir: ENV["GRADLE_PROJECT_DIR"] || "."
+    )
+    gradle(
+      task: "assembleRelease",
+      project_dir: ENV["GRADLE_PROJECT_DIR"] || ".",
+      properties: signing_props
+    )
+
+    # Prefer APK, fallback to AAB
+    artifact = ENV["ANDROID_ARTIFACT_PATH"] || Dir["app/build/outputs/apk/release/*.apk"].first || Dir["app/build/outputs/bundle/release/*.aab"].first
+    unless artifact
+      UI.user_error!("Could not find Android release artifact (APK/AAB)")
+    end
+
+    firebase_app_distribution(
+      app: ENV["FIREBASE_APP_ID"] || ENV["ANDROID_FIREBASE_APP_ID"],
+      groups: ENV["FIREBASE_GROUPS"] || "internal-testers",
+      release_notes: ENV["RELEASE_NOTES"] || "Automated Android build from TeamCity",
+      firebase_cli_token: ENV["FIREBASE_TOKEN"],
+      android_artifact_path: artifact
+    )
+  end
+end
