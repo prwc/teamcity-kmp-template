@@ -60,6 +60,18 @@ end
 platform :android do
   desc "Build Android release and upload to Firebase App Distribution"
   lane :firebase_beta do
+    # Ensure Gradle wrapper is executable on macOS agents (preserves builds from Windows commits)
+    project_dir = ENV["GRADLE_PROJECT_DIR"] || "."
+    wrapper_path = File.join(project_dir, "gradlew")
+    if File.exist?(wrapper_path)
+      begin
+        sh("chmod +x \"#{wrapper_path}\"")
+      rescue => e
+        UI.message("chmod gradlew skipped: #{e}")
+      end
+    end
+    gradle_exec = File.exist?(wrapper_path) ? wrapper_path : "gradle"
+
     # Optional: inject signing via Gradle properties if your project reads them
     signing_props = {}
     if ENV["ANDROID_KEYSTORE_PATH"] && !ENV["ANDROID_KEYSTORE_PATH"].empty?
@@ -75,14 +87,12 @@ platform :android do
       signing_props["android.injected.signing.key.password"] = ENV["ANDROID_KEY_PASSWORD"]
     end
 
-    gradle(
-      task: "clean",
-      project_dir: ENV["GRADLE_PROJECT_DIR"] || "."
-    )
+    gradle(task: "clean", project_dir: project_dir, gradle_path: gradle_exec)
     gradle(
       task: "assembleRelease",
-      project_dir: ENV["GRADLE_PROJECT_DIR"] || ".",
-      properties: signing_props
+      project_dir: project_dir,
+      properties: signing_props,
+      gradle_path: gradle_exec
     )
 
     # Prefer APK, fallback to AAB; support common module names (composeApp, app)
