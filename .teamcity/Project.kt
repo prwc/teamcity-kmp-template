@@ -30,16 +30,13 @@ object AndroidCI : BuildType({
         cleanCheckout = true
     }
     params {
-        // Gradle JVM / caching
-        param("env.JAVA_HOME", "%CONF_JAVA_HOME%")
-        param("env.ANDROID_SDK_ROOT", "%CONF_ANDROID_SDK%")
+        // Use agent-provided environment (JAVA_HOME, ANDROID_SDK_ROOT)
     }
     steps {
         gradle {
             name = "Gradle build (debug)"
             useGradleWrapper = true
-            tasks = "clean :app:assembleDebug test"
-            jdkHome = "%env.JAVA_HOME%"
+            tasks = "clean :composeApp:assembleDebug test"
             gradleParams = "-Dorg.gradle.jvmargs='-Xmx3g' --stacktrace --build-cache"
         }
     }
@@ -67,8 +64,6 @@ object AndroidDistribute : BuildType({
         cleanCheckout = true
     }
     params {
-        param("env.JAVA_HOME", "%CONF_JAVA_HOME%")
-        param("env.ANDROID_SDK_ROOT", "%CONF_ANDROID_SDK%")
         // Firebase
         param("env.FIREBASE_TOKEN", "credentialsJSON:%FIREBASE_TOKEN_ID%")
         param("env.FIREBASE_APP_ID", "%ANDROID_FIREBASE_APP_ID%")
@@ -216,9 +211,7 @@ object ProjectRoot : Project({
         param("APP_STORE_CONNECT_API_KEY_P8_BASE64_ID", "ASC_P8_B64")
         param("FIREBASE_TOKEN_ID", "FIREBASE_TOKEN")
 
-        // Tools on agents
-        param("CONF_JAVA_HOME", "/usr/lib/jvm/temurin-17-jdk")
-        param("CONF_ANDROID_SDK", "/opt/android-sdk")
+        // Tools on agents: use agent defaults (JAVA_HOME, ANDROID_SDK_ROOT)
     }
 
     vcsRoot(GitHubVcs)
