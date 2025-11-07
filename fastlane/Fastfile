@@ -85,8 +85,12 @@ platform :android do
       properties: signing_props
     )
 
-    # Prefer APK, fallback to AAB
-    artifact = ENV["ANDROID_ARTIFACT_PATH"] || Dir["app/build/outputs/apk/release/*.apk"].first || Dir["app/build/outputs/bundle/release/*.aab"].first
+    # Prefer APK, fallback to AAB; support common module names (composeApp, app)
+    artifact = ENV["ANDROID_ARTIFACT_PATH"] ||
+               Dir["composeApp/build/outputs/apk/release/*.apk"].first ||
+               Dir["app/build/outputs/apk/release/*.apk"].first ||
+               Dir["composeApp/build/outputs/bundle/release/*.aab"].first ||
+               Dir["app/build/outputs/bundle/release/*.aab"].first
     unless artifact
       UI.user_error!("Could not find Android release artifact (APK/AAB)")
     end
