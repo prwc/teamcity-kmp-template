@@ -61,22 +61,33 @@ platform :android do
   desc "Build Android release and upload to Firebase App Distribution"
   lane :firebase_beta do
     # Ensure Gradle executable (prefer wrapper; else absolute system gradle)
-    project_dir = "."
-    wrapper_path = File.join(project_dir, "gradlew")
+    wrapper_path = nil
+    if File.exist?("gradlew")
+      wrapper_path = "gradlew"
+    else
+      # Search the repo for a gradlew wrapper if not at root
+      candidates = Dir["**/gradlew"].select { |p| File.file?(p) }
+      wrapper_path = candidates.first if candidates.any?
+    end
+
     gradle_exec = nil
-    if File.exist?(wrapper_path)
+    project_dir = "."
+    if wrapper_path
       begin
         sh("chmod +x \"#{wrapper_path}\"")
       rescue => e
         UI.message("chmod gradlew skipped: #{e}")
       end
-      gradle_exec = wrapper_path
+      gradle_exec = File.expand_path(wrapper_path)
+      project_dir = File.dirname(wrapper_path)
+      UI.message("Using Gradle wrapper at: #{gradle_exec}")
     else
-      which_out = sh("which gradle || true").to_s.strip
+      which_out = sh("command -v gradle || which gradle || true").to_s.strip
       if which_out.empty?
         UI.user_error!("Gradle wrapper not found and system 'gradle' not available. Add gradlew to your repo or install Gradle on the agent.")
       end
       gradle_exec = which_out
+      UI.message("Using system gradle at: #{gradle_exec}")
     end
 
     # Optional: inject signing via Gradle properties if your project reads them
