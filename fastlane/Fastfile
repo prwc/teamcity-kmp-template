@@ -60,17 +60,24 @@ end
 platform :android do
   desc "Build Android release and upload to Firebase App Distribution"
   lane :firebase_beta do
-    # Ensure Gradle wrapper is executable on macOS agents (preserves builds from Windows commits)
-    project_dir = ENV["GRADLE_PROJECT_DIR"] || "."
+    # Ensure Gradle executable (prefer wrapper; else absolute system gradle)
+    project_dir = "."
     wrapper_path = File.join(project_dir, "gradlew")
+    gradle_exec = nil
     if File.exist?(wrapper_path)
       begin
         sh("chmod +x \"#{wrapper_path}\"")
       rescue => e
         UI.message("chmod gradlew skipped: #{e}")
       end
+      gradle_exec = wrapper_path
+    else
+      which_out = sh("which gradle || true").to_s.strip
+      if which_out.empty?
+        UI.user_error!("Gradle wrapper not found and system 'gradle' not available. Add gradlew to your repo or install Gradle on the agent.")
+      end
+      gradle_exec = which_out
     end
-    gradle_exec = File.exist?(wrapper_path) ? wrapper_path : "gradle"
 
     # Optional: inject signing via Gradle properties if your project reads them
     signing_props = {}
@@ -89,7 +96,7 @@ platform :android do
 
     gradle(task: "clean", project_dir: project_dir, gradle_path: gradle_exec)
     gradle(
-      task: "assembleRelease",
+      task: ":composeApp:assembleRelease",
       project_dir: project_dir,
       properties: signing_props,
       gradle_path: gradle_exec
