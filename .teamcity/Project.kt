@@ -44,13 +44,12 @@ object AndroidCI : BuildType({
     triggers {
         vcs {
             branchFilter = """
-                +:refs/heads/master
+                +:refs/heads/main
             """.trimIndent()
         }
     }
     requirements {
-        // Any macOS agent with Android SDK
-        contains("env.ANDROID_SDK_ROOT", "/") // simplistic presence check
+        // Any macOS agent
         contains("teamcity.agent.jvm.os.name", "Mac") // run on macOS agents
     }
 })
@@ -88,12 +87,11 @@ object AndroidDistribute : BuildType({
     triggers {
         vcs {
             branchFilter = """
-                +:refs/heads/master
+                +:refs/heads/main
             """.trimIndent()
         }
     }
     requirements {
-        contains("env.ANDROID_SDK_ROOT", "/")
         contains("teamcity.agent.jvm.os.name", "Mac")
     }
 })
@@ -132,12 +130,11 @@ object IosTestFlight : BuildType({
     artifactRules = "fastlane/build/**/*.ipa => ios-artifacts"
     requirements {
         contains("teamcity.agent.jvm.os.name", "Mac")
-        contains("env.XCODE_VERSION", "") // any Xcode
     }
     triggers {
         vcs {
             branchFilter = """
-                +:refs/heads/master
+                +:refs/heads/main
             """.trimIndent()
         }
     }
